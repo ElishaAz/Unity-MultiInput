@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace MultiInput.Internal.Platforms.Linux
@@ -136,6 +137,26 @@ namespace MultiInput.Internal.Platforms.Linux
             };
 
             return key;
+        }
+
+        public static MouseEvent EventCodeToMouseEvent(EventCode eventCode)
+        {
+            return eventCode switch
+            {
+                EventCode.LeftMouse => MouseEvent.LeftMouse,
+                EventCode.RightMouse => MouseEvent.RightMouse,
+                EventCode.MiddleMouse => MouseEvent.MiddleMouse,
+                EventCode.MouseBack => MouseEvent.MouseBack,
+                EventCode.MouseForward => MouseEvent.MouseForward,
+                EventCode.ToolFinger => MouseEvent.SingleFingerTap,
+                EventCode.ToolDoubleTap => MouseEvent.DoubleFingerTap,
+                EventCode.ToolTripleTap => MouseEvent.TripleFingerTap,
+                EventCode.ToolQuadTap => MouseEvent.QuadFingerTap,
+                EventCode.ToolQuintTap => MouseEvent.QuintFingerTap,
+                EventCode.Touch => MouseEvent.Touch,
+
+                _ => MouseEvent.Other
+            };
         }
     }
 }

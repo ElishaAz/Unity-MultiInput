@@ -29,19 +29,26 @@ namespace MultiInput.Internal.Platforms.Linux
     public class InputManagerLinux : IInputManager
     {
         private readonly List<KeyboardLinux> keyboards = new List<KeyboardLinux>();
+        private readonly List<MouseLinux> mice = new List<MouseLinux>();
 
         public InputManagerLinux()
         {
             var keyboardFiles = Directory.GetFiles("/dev/input/by-path/", "*-event-kbd");
-            // var mouseFiles = Directory.GetFiles("/dev/input/by-path/", "*-event-mouse");
+            var mouseFiles = Directory.GetFiles("/dev/input/", "mouse*");
             // var files = Directory.GetFiles("/dev/input", "event*");
 
             foreach (var file in keyboardFiles)
             {
-                var reader = new InputReader(file);
-                var keyboard = new KeyboardLinux(reader, InvokeAnyKeyboardPress);
+                var keyboard = new KeyboardLinux(file, InvokeAnyKeyboardPress);
                 keyboards.Add(keyboard);
             }
+
+            foreach (var file in new string[] {"/dev/input/event5", "/dev/input/event6"})
+            {
+                var mouse = new MouseLinux(file, InvokeAnyMouseMovement, InvokeAnyMousePress);
+                mice.Add(mouse);
+            }
+            // Debug.Log($"Added {mouseFiles.Length} mice.");
         }
 
         public void Dispose()
@@ -51,7 +58,13 @@ namespace MultiInput.Internal.Platforms.Linux
                 keyboard.Dispose();
             }
 
+            foreach (var mouse in mice)
+            {
+                mouse.Dispose();
+            }
+
             keyboards.Clear();
+            mice.Clear();
         }
 
         private void InvokeAnyKeyboardPress(KeyCode code, KeyboardLinux keyboard)
@@ -59,8 +72,22 @@ namespace MultiInput.Internal.Platforms.Linux
             OnAnyKeyboardPress?.Invoke(code, keyboard);
         }
 
+        private void InvokeAnyMousePress(MouseEvent mouseEvent, MouseLinux mouse)
+        {
+            OnAnyMouseClick?.Invoke(mouseEvent, mouse);
+        }
+
+        private void InvokeAnyMouseMovement(MouseMovement mouseMovement, MouseLinux mouse)
+        {
+            OnAnyMouseMovement?.Invoke(mouseMovement, mouse);
+        }
+
         public IReadOnlyList<IKeyboardInternal> Keyboards => keyboards;
+        public IReadOnlyList<IMouseInternal> Mice => mice;
 
         public event AnyKeyboardAction OnAnyKeyboardPress;
+
+        public event AnyMouseEvent OnAnyMouseClick;
+        public event AnyMouseMovement OnAnyMouseMovement;
     }
 }

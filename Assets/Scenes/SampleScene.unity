@@ -134,7 +134,7 @@ GameObject:
   - component: {fileID: 55067005}
   - component: {fileID: 55067006}
   m_Layer: 0
-  m_Name: CubesManager
+  m_Name: GameManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -168,6 +168,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cubePref: {fileID: 1993262670589670375, guid: d962d9573d25faf42a82cdd9a11c4888, type: 3}
+  spherePref: {fileID: 2013861314300673517, guid: a87a8ce5ada08823885e5887fa7c5729, type: 3}
 --- !u!1 &455026614
 GameObject:
   m_ObjectHideFlags: 0

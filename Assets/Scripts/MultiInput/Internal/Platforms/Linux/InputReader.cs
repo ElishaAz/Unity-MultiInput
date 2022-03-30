@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using UnityEngine;
 
 namespace MultiInput.Internal.Platforms.Linux
 {
@@ -14,23 +15,23 @@ namespace MultiInput.Internal.Platforms.Linux
     /// is included with each button event, but if you're interested, you can find it on the first
     /// 16 bits on the buffer.
     /// </summary>
-    public class InputReader : IDisposable
+    public abstract class InputReader : IDisposable
     {
-        public delegate void RaiseKeyPress(KeyPressEvent e);
-
-        public delegate void RaiseMouseMove(MouseMoveEvent e);
-
-        public event RaiseKeyPress OnKeyPress;
-        public event RaiseMouseMove OnMouseMove;
+        // public delegate void RaiseKeyPress(KeyPressEvent e);
+        //
+        // public delegate void RaiseMouseMove(MouseMoveEvent e);
+        //
+        // public event RaiseKeyPress OnKeyPress;
+        // public event RaiseMouseMove OnMouseMove;
 
         private const int BufferLength = 24;
-    
+
         private readonly byte[] _buffer = new byte[BufferLength];
-    
+
         private FileStream _stream;
         private bool _disposing;
 
-        public InputReader(string path)
+        protected InputReader(string path)
         {
             _stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 
@@ -51,30 +52,38 @@ namespace MultiInput.Internal.Platforms.Linux
                 var value = BitConverter.ToInt32(new[] {_buffer[20], _buffer[21], _buffer[22], _buffer[23]}, 0);
 
                 var eventType = (EventType) type;
+                HandleEvent(eventType,code,value);
 
-                switch (eventType)
-                {
-                    case EventType.EV_KEY:
-                        HandleKeyPressEvent(code, value);
-                        break;
-                    case EventType.EV_REL:
-                        var axis = (MouseAxis) code;
-                        var e = new MouseMoveEvent(axis, value);
-                        OnMouseMove?.Invoke(e);
-                        break;
-                }
+                // switch (eventType)
+                // {
+                //     case EventType.EV_KEY:
+                //         HandleKeyPressEvent(code, value);
+                //         break;
+                //     case EventType.EV_REL:
+                //         var axis = (RelativeMovementAxis) code;
+                //         var e = new MouseMoveEvent(axis, value);
+                //         Debug.Log($"Mouse moved {axis}, {value}");
+                //         OnMouseMove?.Invoke(e);
+                //         break;
+                //     case EventType.EV_ABS:
+                //         Debug.Log($"Mouse moved {code}, {value}");
+                //         // OnMouseMove?.Invoke(e);
+                //         break;
+                // }
             }
         }
 
-        private void HandleKeyPressEvent(short code, int value)
-        {
-            var c = (EventCode) code;
-            var s = (KeyState) value;
-            var e = new KeyPressEvent(c, s);
-            OnKeyPress?.Invoke(e);
-        }
+        protected abstract void HandleEvent(EventType type, short code, int value);
 
-        public void Dispose()
+        // private void HandleKeyPressEvent(short code, int value)
+        // {
+        //     var c = (EventCode) code;
+        //     var s = (KeyState) value;
+        //     var e = new KeyPressEvent(c, s);
+        //     OnKeyPress?.Invoke(e);
+        // }
+
+        public virtual void Dispose()
         {
             _disposing = true;
             _stream.Dispose();

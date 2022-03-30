@@ -5,97 +5,49 @@ using UnityEngine;
 
 namespace MultiInput.Internal.Platforms.Linux
 {
-    public class KeyboardLinux : IKeyboardInternal, IDisposable
+    public class KeyboardLinux : InputReader, IKeyboardInternal
     {
-        private struct MyKeyEvent
-        {
-            public MyKeyEvent(KeyCode code, KeyState state)
-            {
-                Code = code;
-                State = state;
-            }
-
-            public readonly KeyCode Code;
-            public readonly KeyState State;
-        }
-
         private readonly InputReader inputReader;
         private readonly Action<KeyCode, KeyboardLinux> invokeAnyKeyboardPress;
-        private readonly ConcurrentQueue<MyKeyEvent> actions = new ConcurrentQueue<MyKeyEvent>();
-        private readonly HashSet<KeyCode> keysDown = new HashSet<KeyCode>();
-        private readonly HashSet<KeyCode> keysUp = new HashSet<KeyCode>();
-        private readonly HashSet<KeyCode> keysHeld = new HashSet<KeyCode>();
 
-        internal KeyboardLinux(InputReader inputReader, Action<KeyCode, KeyboardLinux> invokeAnyKeyboardPress)
+        private readonly KeyPressProvider<KeyCode> keyPressProvider;
+
+        internal KeyboardLinux(string path, Action<KeyCode, KeyboardLinux> invokeAnyKeyboardPress) :
+            base(path)
         {
-            this.inputReader = inputReader;
             this.invokeAnyKeyboardPress = invokeAnyKeyboardPress;
-            inputReader.OnKeyPress += EventHandler;
+            keyPressProvider = new KeyPressProvider<KeyCode>(
+                code => OnKeyPressed?.Invoke(code),
+                code => OnKeyReleased?.Invoke(code));
         }
 
-        private void EventHandler(KeyPressEvent pressEvent)
+        protected override void HandleEvent(EventType type, short code, int value)
         {
-            var key = InputConverter.EventCodeToKeyCode(pressEvent.Code);
-            switch (pressEvent.State)
-            {
-                case KeyState.KeyDown:
-                    keysHeld.Add(key);
-                    OnKeyPressed?.Invoke(key);
-                    break;
-                case KeyState.KeyHold:
-                    keysHeld.Add(key);
-                    break;
-                case KeyState.KeyUp:
-                    keysHeld.Remove(key);
-                    OnKeyReleased?.Invoke(key);
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
+            if (type != EventType.EV_KEY) return;
 
-            if (pressEvent.State == KeyState.KeyHold) return;
-            var myEvent = new MyKeyEvent(key, pressEvent.State);
-            actions.Enqueue(myEvent);
+            var keyCode = InputConverter.EventCodeToKeyCode((EventCode) code);
+            keyPressProvider.HandleEvent(keyCode, (KeyState) value);
+            invokeAnyKeyboardPress?.Invoke(keyCode, this);
         }
 
         void IKeyboardInternal.StartMainLoop()
         {
-            keysDown.Clear();
-            keysUp.Clear();
-            keysHeld.Clear();
+            keyPressProvider.StartMainLoop();
         }
 
         void IKeyboardInternal.MainLoop()
         {
-            keysDown.Clear();
-            keysUp.Clear();
-
-            while (actions.TryDequeue(out var action))
-            {
-                switch (action.State)
-                {
-                    case KeyState.KeyDown:
-                        keysDown.Add(action.Code);
-                        invokeAnyKeyboardPress?.Invoke(action.Code, this);
-                        break;
-                    case KeyState.KeyUp:
-                        keysUp.Add(action.Code);
-                        break;
-                }
-            }
+            keyPressProvider.MainLoop();
         }
 
         void IKeyboardInternal.StopMainLoop()
         {
-            keysDown.Clear();
-            keysUp.Clear();
-            keysHeld.Clear();
+            keyPressProvider.StopMainLoop();
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
-            inputReader.OnKeyPress -= EventHandler;
-            inputReader.Dispose();
+            base.Dispose();
         }
 
 
@@ -104,17 +56,17 @@ namespace MultiInput.Internal.Platforms.Linux
 
         public bool GetKey(KeyCode code)
         {
-            return keysHeld.Contains(code);
+            return keyPressProvider.KeysHeld.Contains(code);
         }
 
         public bool GetKeyDown(KeyCode code)
         {
-            return keysDown.Contains(code);
+            return keyPressProvider.KeysDown.Contains(code);
         }
 
         public bool GetKeyUp(KeyCode code)
         {
-            return keysUp.Contains(code);
+            return keyPressProvider.KeysUp.Contains(code);
         }
     }
 }

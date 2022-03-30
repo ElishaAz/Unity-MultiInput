@@ -6,7 +6,7 @@ namespace MultiInput.Internal.Platforms.Linux
     /// Mouse movements are expressed in an amount moved and an axis associated with that change.
     /// 0 represents movements on the X axis and 1 represents movements on the Y axis.
     /// </summary>
-    public enum MouseAxis
+    public enum RelativeMovementAxis
     {
         X = 0,
         Y = 1,
@@ -14,11 +14,11 @@ namespace MultiInput.Internal.Platforms.Linux
         RX = 3,
         RY = 4,
         RZ = 5,
-        HWHEEL = 6,
-        DIAL = 7,
-        WHEEL = 8,
-        MISC = 9,
-        MAX = 10,
+        HWheel = 6,
+        Dial = 7,
+        Wheel = 8,
+        Misc = 9,
+        Max = 10,
         CNT = 11
     }
 }

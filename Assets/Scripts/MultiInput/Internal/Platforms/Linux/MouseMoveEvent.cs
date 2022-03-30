@@ -7,13 +7,13 @@ namespace MultiInput.Internal.Platforms.Linux
     /// </summary>
     public class MouseMoveEvent : EventArgs
     {
-        public MouseMoveEvent(MouseAxis axis, int amount)
+        public MouseMoveEvent(RelativeMovementAxis axis, int amount)
         {
             Axis = axis;
             Amount = amount;
         }
     
-        public MouseAxis Axis { get; }
+        public RelativeMovementAxis Axis { get; }
     
         public int Amount { get; set; }
     }
