@@ -14,5 +14,10 @@ namespace MultiInput
             this.Absolute = absolute;
             this.Relative = relative;
         }
+
+        public override string ToString()
+        {
+            return $"{nameof(IsAbsolute)}: {IsAbsolute}, {nameof(Absolute)}: {Absolute}, {nameof(Relative)}: {Relative}";
+        }
     }
 }

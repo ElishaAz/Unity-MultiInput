@@ -43,6 +43,11 @@ namespace MultiInput
             {
                 keyboard.StartMainLoop();
             }
+
+            foreach (var mouse in implPicker.InputManagerImpl.Mice)
+            {
+                mouse.StartMainLoop();
+            }
         }
 
         private void Update()
@@ -53,6 +58,11 @@ namespace MultiInput
             {
                 keyboard.MainLoop();
             }
+
+            foreach (var mouse in implPicker.InputManagerImpl.Mice)
+            {
+                mouse.MainLoop();
+            }
         }
 
         private void OnDisable()
@@ -62,6 +72,11 @@ namespace MultiInput
             foreach (var keyboard in implPicker.InputManagerImpl.Keyboards)
             {
                 keyboard.StopMainLoop();
+            }
+
+            foreach (var mouse in implPicker.InputManagerImpl.Mice)
+            {
+                mouse.StopMainLoop();
             }
         }
 

@@ -27,6 +27,7 @@ public class SphereMovement : MonoBehaviour
         }
         else
         {
+            Debug.Log($"movement.y: {movement.Relative.y}, Unity Y: {Input.GetAxis("Mouse Y")}");
             transform.Translate(movement.Relative * speed);
         }
     }

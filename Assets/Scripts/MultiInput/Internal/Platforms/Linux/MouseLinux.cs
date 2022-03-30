@@ -9,6 +9,7 @@ namespace MultiInput.Internal.Platforms.Linux
         private readonly Action<MouseEvent, MouseLinux> invokeAnyMouseEvent;
 
         private Vector2 absPos;
+        private Vector2 lastAbsPos;
 
         private Vector2 currentMovement;
         private Vector2 movement;
@@ -40,11 +41,12 @@ namespace MultiInput.Internal.Platforms.Linux
                 case EventType.EV_REL:
                     var axis = (RelativeMovementAxis) code;
                     RelativeMoveEventHandler(axis, value);
+                    // Debug.Log($"Mouse moved {axis}, {value}");
                     break;
                 case EventType.EV_ABS:
                     var axisAbs = (AbsoluteMovementAxis) code;
                     AbsoluteMoveEventHandler(axisAbs, value);
-                    Debug.Log($"Mouse moved abs {code}, {value}");
+                    // Debug.Log($"Mouse moved abs {axisAbs}, {value}");
                     // OnMouseMove?.Invoke(e);
                     break;
             }
@@ -52,12 +54,18 @@ namespace MultiInput.Internal.Platforms.Linux
 
         private void RelativeMoveEventHandler(RelativeMovementAxis axis, int value)
         {
-            var movementNow = axis switch
+            Vector2 movementNow;
+            switch (axis)
             {
-                RelativeMovementAxis.X => new Vector2(value, 0),
-                RelativeMovementAxis.Y => new Vector2(0, value),
-                _ => Vector2.zero
-            };
+                case RelativeMovementAxis.X:
+                    movementNow = new Vector2(value, 0);
+                    break;
+                case RelativeMovementAxis.Y:
+                    movementNow = new Vector2(0, -value); // unity: y is up, input: y is down
+                    break;
+                default:
+                    return;
+            }
 
             lock (this)
             {
@@ -66,7 +74,7 @@ namespace MultiInput.Internal.Platforms.Linux
                 isAbsolute = false;
             }
 
-            Debug.Log($"Mouse moved {movementNow}");
+            // Debug.Log($"Mouse moved {movementNow}");
 
             var mouseMovement = new MouseMovement(false, absPos, movementNow);
 
@@ -76,12 +84,18 @@ namespace MultiInput.Internal.Platforms.Linux
 
         private void AbsoluteMoveEventHandler(AbsoluteMovementAxis axis, int value)
         {
-            var posNow = axis switch
+            Vector2 posNow;
+            switch (axis)
             {
-                AbsoluteMovementAxis.MT_POSITION_X => new Vector2(value, 0),
-                AbsoluteMovementAxis.MT_POSITION_Y => new Vector2(0, value),
-                _ => Vector2.zero
-            };
+                case AbsoluteMovementAxis.X:
+                    posNow = new Vector2(value, 0);
+                    break;
+                case AbsoluteMovementAxis.Y:
+                    posNow = new Vector2(0, -value); // unity: y is up, input: y is down
+                    break;
+                default:
+                    return;
+            }
 
             lock (this)
             {

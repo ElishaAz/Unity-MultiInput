@@ -34,7 +34,7 @@ namespace MultiInput.Internal.Platforms.Linux
         public InputManagerLinux()
         {
             var keyboardFiles = Directory.GetFiles("/dev/input/by-path/", "*-event-kbd");
-            var mouseFiles = Directory.GetFiles("/dev/input/", "mouse*");
+            var mouseFiles = Directory.GetFiles("/dev/input/by-path/", "*-event-mouse");
             // var files = Directory.GetFiles("/dev/input", "event*");
 
             foreach (var file in keyboardFiles)
@@ -43,7 +43,7 @@ namespace MultiInput.Internal.Platforms.Linux
                 keyboards.Add(keyboard);
             }
 
-            foreach (var file in new string[] {"/dev/input/event5", "/dev/input/event6"})
+            foreach (var file in mouseFiles)
             {
                 var mouse = new MouseLinux(file, InvokeAnyMouseMovement, InvokeAnyMousePress);
                 mice.Add(mouse);
