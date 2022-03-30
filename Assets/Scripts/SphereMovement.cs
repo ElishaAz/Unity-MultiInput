@@ -21,14 +21,7 @@ public class SphereMovement : MonoBehaviour
         if (!initialized) return;
 
         var movement = mouse.GetMouseMovement();
-        if (movement.IsAbsolute)
-        {
-            transform.position = (movement.Absolute * speed);
-        }
-        else
-        {
-            Debug.Log($"movement.y: {movement.Relative.y}, Unity Y: {Input.GetAxis("Mouse Y")}");
-            transform.Translate(movement.Relative * speed);
-        }
+
+        transform.Translate(movement.Movement * speed);
     }
 }

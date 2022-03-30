@@ -2,22 +2,24 @@ using UnityEngine;
 
 namespace MultiInput
 {
-    public struct MouseMovement
+    /// <summary>
+    /// Represents a mouse's movement.
+    /// </summary>
+    public readonly struct MouseMovement
     {
-        public readonly bool IsAbsolute;
-        public readonly Vector2 Absolute;
-        public readonly Vector2 Relative;
+        /// <summary>
+        /// The relative movement.
+        /// </summary>
+        public readonly Vector2 Movement;
 
-        public MouseMovement(bool isAbsolute, Vector2 absolute, Vector2 relative)
+        public MouseMovement(Vector2 movement)
         {
-            this.IsAbsolute = isAbsolute;
-            this.Absolute = absolute;
-            this.Relative = relative;
+            this.Movement = movement;
         }
 
         public override string ToString()
         {
-            return $"{nameof(IsAbsolute)}: {IsAbsolute}, {nameof(Absolute)}: {Absolute}, {nameof(Relative)}: {Relative}";
+            return $"{nameof(Movement)}: {Movement}";
         }
     }
 }

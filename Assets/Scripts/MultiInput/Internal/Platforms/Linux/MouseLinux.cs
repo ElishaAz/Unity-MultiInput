@@ -8,12 +8,8 @@ namespace MultiInput.Internal.Platforms.Linux
         private readonly Action<MouseMovement, MouseLinux> invokeAnyMouseMovement;
         private readonly Action<MouseEvent, MouseLinux> invokeAnyMouseEvent;
 
-        private Vector2 absPos;
-        private Vector2 lastAbsPos;
-
         private Vector2 currentMovement;
         private Vector2 movement;
-        private bool isAbsolute;
 
         private KeyPressProvider<MouseEvent> keyPressProvider;
 
@@ -41,13 +37,6 @@ namespace MultiInput.Internal.Platforms.Linux
                 case EventType.EV_REL:
                     var axis = (RelativeMovementAxis) code;
                     RelativeMoveEventHandler(axis, value);
-                    // Debug.Log($"Mouse moved {axis}, {value}");
-                    break;
-                case EventType.EV_ABS:
-                    var axisAbs = (AbsoluteMovementAxis) code;
-                    AbsoluteMoveEventHandler(axisAbs, value);
-                    // Debug.Log($"Mouse moved abs {axisAbs}, {value}");
-                    // OnMouseMove?.Invoke(e);
                     break;
             }
         }
@@ -69,42 +58,12 @@ namespace MultiInput.Internal.Platforms.Linux
 
             lock (this)
             {
-                absPos += movementNow;
                 currentMovement += movementNow;
-                isAbsolute = false;
             }
 
             // Debug.Log($"Mouse moved {movementNow}");
 
-            var mouseMovement = new MouseMovement(false, absPos, movementNow);
-
-            OnMove?.Invoke(mouseMovement);
-            invokeAnyMouseMovement.Invoke(mouseMovement, this);
-        }
-
-        private void AbsoluteMoveEventHandler(AbsoluteMovementAxis axis, int value)
-        {
-            Vector2 posNow;
-            switch (axis)
-            {
-                case AbsoluteMovementAxis.X:
-                    posNow = new Vector2(value, 0);
-                    break;
-                case AbsoluteMovementAxis.Y:
-                    posNow = new Vector2(0, -value); // unity: y is up, input: y is down
-                    break;
-                default:
-                    return;
-            }
-
-            lock (this)
-            {
-                currentMovement += posNow - absPos;
-                absPos = posNow;
-                isAbsolute = true;
-            }
-
-            var mouseMovement = new MouseMovement(true, absPos, posNow);
+            var mouseMovement = new MouseMovement(movementNow);
 
             OnMove?.Invoke(mouseMovement);
             invokeAnyMouseMovement.Invoke(mouseMovement, this);
@@ -150,7 +109,7 @@ namespace MultiInput.Internal.Platforms.Linux
         public event IMouse.Event OnEventUp;
         public event IMouse.Event OnEventDown;
 
-        public MouseMovement GetMouseMovement() => new MouseMovement(isAbsolute, absPos, movement);
+        public MouseMovement GetMouseMovement() => new MouseMovement(movement);
 
         public bool GetEvent(MouseEvent code) => keyPressProvider.KeysHeld.Contains(code);
 
