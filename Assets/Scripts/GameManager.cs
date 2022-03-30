@@ -6,11 +6,12 @@ using DefaultNamespace;
 using MultiInput;
 using UnityEngine;
 
-public class CubesManager : MonoBehaviour
+public class GameManager : MonoBehaviour
 {
     [SerializeField] private CubeMovement cubePref;
 
     private readonly Dictionary<IKeyboard, CubeMovement> cubes = new Dictionary<IKeyboard, CubeMovement>();
+    private readonly Dictionary<IMouse, CubeMovement> spheres = new Dictionary<IMouse, CubeMovement>();
     private readonly ConcurrentQueue<IKeyboard> activeKeyboardsQueue = new ConcurrentQueue<IKeyboard>();
 
     private void Awake()
