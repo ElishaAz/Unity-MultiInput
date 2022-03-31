@@ -1,5 +1,4 @@
 using System;
-using MultiInput.Internal.Platforms.Linux;
 
 namespace MultiInput.Internal
 {
@@ -16,9 +15,11 @@ namespace MultiInput.Internal
         private InputManagerImplPicker()
         {
 #if UNITY_EDITOR_LINUX || UNITY_STANDALONE_LINUX
-            InputManagerImpl = new InputManagerLinux();
+            InputManagerImpl = new Platforms.Linux.InputManagerLinux();
+#elif UNITY_EDITOR_WINDOWS || UNITY_STANDALONE_WINDOWS
+            InputManagerImpl = new Platforms.Windows.InputManagerWindows();
 #else
-                throw new PlatformNotSupportedException("MultiInput does not support this platform yet!");
+            throw new PlatformNotSupportedException("MultiInput does not support this platform yet!");
 #endif
         }
 
