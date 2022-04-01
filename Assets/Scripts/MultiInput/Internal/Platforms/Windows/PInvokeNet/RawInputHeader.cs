@@ -17,5 +17,10 @@ namespace MultiInput.Internal.Platforms.Windows.PInvokeNet
         public IntPtr Device;
         /// <summary>wParam from the window message.</summary>
         public IntPtr wParam;
+
+        public override string ToString()
+        {
+            return $"{nameof(Type)}: {Type}, {nameof(Size)}: {Size}, {nameof(Device)}: {Device}, {nameof(wParam)}: {wParam}";
+        }
     }
 }

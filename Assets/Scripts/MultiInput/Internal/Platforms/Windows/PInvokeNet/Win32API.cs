@@ -17,6 +17,10 @@ namespace MultiInput.Internal.Platforms.Windows.PInvokeNet
         [DllImport("user32.dll")]
         public static extern int GetRawInputData(IntPtr hRawInput, RawInputCommand uiCommand, out RawInput pData,
             ref int pcbSize, int cbSizeHeader);
+        
+        [DllImport("User32.dll", SetLastError = true)]
+        public static extern int GetRawInputBuffer(out RawInput pData, ref int pcbSize,
+            int cbSizeHeader);
 
         // This static method is required because legacy OSes do not support
         // SetWindowLongPtr
@@ -67,5 +71,7 @@ namespace MultiInput.Internal.Platforms.Windows.PInvokeNet
         public static extern bool RegisterRawInputDevices(
             [MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 0)] RawInputDevice[] pRawInputDevices, int uiNumDevices,
             int cbSize);
+        
+        public const int GWLP_WNDPROC = -4;
     }
 }

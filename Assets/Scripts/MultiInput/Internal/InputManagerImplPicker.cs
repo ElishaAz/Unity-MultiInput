@@ -16,7 +16,7 @@ namespace MultiInput.Internal
         {
 #if UNITY_EDITOR_LINUX || UNITY_STANDALONE_LINUX
             InputManagerImpl = new Platforms.Linux.InputManagerLinux();
-#elif UNITY_EDITOR_WINDOWS || UNITY_STANDALONE_WINDOWS
+#elif UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
             InputManagerImpl = new Platforms.Windows.InputManagerWindows();
 #else
             throw new PlatformNotSupportedException("MultiInput does not support this platform yet!");

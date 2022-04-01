@@ -27,14 +27,21 @@ namespace MultiInput.Internal.Platforms.Windows
         private WndProcDelegate newWndProc;
         private bool isRunning = false;
 
-        public void Start()
+        public MyWMListener()
+        {
+            Start();
+        }
+
+        private void Start()
         {
             if (isRunning) return;
 
             hMainWindow = Win32API.GetForegroundWindow();
             newWndProc = new WndProcDelegate(WndProc);
             newWndProcPtr = Marshal.GetFunctionPointerForDelegate(newWndProc);
-            oldWndProcPtr = Win32API.SetWindowLongPtr(new HandleRef(this, hMainWindow), -4, newWndProcPtr);
+            oldWndProcPtr = Win32API.SetWindowLongPtr(new HandleRef(this, hMainWindow), Win32API.GWLP_WNDPROC, newWndProcPtr);
+
+            // Debug.Log(string.Join(",",GetAllRawDevices().Select(a => a.ToString())));
 
             var rid = new RawInputDevice[2];
 
@@ -114,6 +121,7 @@ namespace MultiInput.Internal.Platforms.Windows
             if (outSize != -1)
             {
                 OnInput?.Invoke(input);
+                Debug.Log(input);
             }
 
             return Win32API.CallWindowProc(oldWndProcPtr, hWnd, msg, wParam, lParam);
@@ -123,14 +131,37 @@ namespace MultiInput.Internal.Platforms.Windows
         public void Dispose()
         {
             if (!isRunning) return;
+            isRunning = false;
+            var rid = new RawInputDevice[2];
 
-            Win32API.SetWindowLongPtr(new HandleRef(this, hMainWindow), -4, oldWndProcPtr);
+            rid[0].UsagePage = HIDUsagePage.Generic; // HID_USAGE_PAGE_GENERIC
+            rid[0].Usage = HIDUsage.Mouse; // HID_USAGE_GENERIC_MOUSE
+            rid[0].Flags = RawInputDeviceFlags.Remove; // adds mouse
+            rid[0].WindowHandle = hMainWindow;
+
+            rid[1].UsagePage = HIDUsagePage.Generic; // HID_USAGE_PAGE_GENERIC
+            rid[1].Usage = HIDUsage.Keyboard; // HID_USAGE_GENERIC_KEYBOARD
+            rid[1].Flags = RawInputDeviceFlags.Remove; // adds keyboard
+            rid[1].WindowHandle = hMainWindow;
+
+            Win32API.RegisterRawInputDevices(rid, rid.Length,
+                Marshal.SizeOf(typeof(RawInputDevicesListItem)));
+            
+            Win32API.SetWindowLongPtr(new HandleRef(this, hMainWindow), Win32API.GWLP_WNDPROC, default);
+
             hMainWindow = IntPtr.Zero;
             oldWndProcPtr = IntPtr.Zero;
             newWndProcPtr = IntPtr.Zero;
             newWndProc = null;
             isRunning = false;
+
+            // GC.SuppressFinalize(this);
         }
+
+        // ~MyWMListener()
+        // {
+        //     Dispose();
+        // }
 
         public event InputAction OnInput;
     }

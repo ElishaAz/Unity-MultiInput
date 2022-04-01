@@ -8,5 +8,10 @@ namespace MultiInput.Internal.Platforms.Windows.PInvokeNet
     {
         public IntPtr hDevice;
         public RawInputDeviceType Type;
+
+        public override string ToString()
+        {
+            return $"{nameof(hDevice)}: {hDevice}, {nameof(Type)}: {Type}";
+        }
     }
 }

@@ -20,6 +20,11 @@ namespace MultiInput.Internal.Platforms.Windows.PInvokeNet
         public WM Message;
         /// <summary>Extra information.</summary>
         public int ExtraInformation;
+
+        public override string ToString()
+        {
+            return $"{nameof(MakeCode)}: {MakeCode}, {nameof(Flags)}: {Flags}, {nameof(Reserved)}: {Reserved}, {nameof(VirtualKey)}: {VirtualKey}, {nameof(Message)}: {Message}, {nameof(ExtraInformation)}: {ExtraInformation}";
+        }
     }
 
 }

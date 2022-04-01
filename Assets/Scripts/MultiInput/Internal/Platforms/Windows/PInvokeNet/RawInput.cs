@@ -31,6 +31,16 @@ namespace MultiInput.Internal.Platforms.Windows.PInvokeNet
             /// </summary>
             [FieldOffset(0)]
             public RawHID HID;
+
+            public override string ToString()
+            {
+                return $"{nameof(Mouse)}: {Mouse}, {nameof(Keyboard)}: {Keyboard}, {nameof(HID)}: {HID}";
+            }
+        }
+
+        public override string ToString()
+        {
+            return $"{nameof(Header)}: {Header}, {nameof(Data)}: {Data}";
         }
     }
 }

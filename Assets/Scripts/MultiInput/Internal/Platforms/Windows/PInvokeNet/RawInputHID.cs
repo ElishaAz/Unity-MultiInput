@@ -7,5 +7,10 @@ namespace MultiInput.Internal.Platforms.Windows.PInvokeNet
     {
         public int Size;
         public int Count;
+
+        public override string ToString()
+        {
+            return $"{nameof(Size)}: {Size}, {nameof(Count)}: {Count}";
+        }
     }
 }
