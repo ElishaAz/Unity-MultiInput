@@ -3,34 +3,31 @@ using UnityEngine;
 
 namespace MultiInput.Internal.Platforms.Linux
 {
-    public class MouseLinux : InputReader, IMouseInternal
+    public class MouseLinux : MouseAbstract
     {
         private readonly Action<MouseMovement, MouseLinux> invokeAnyMouseMovement;
         private readonly Action<MouseEvent, MouseLinux> invokeAnyMouseEvent;
 
-        private Vector2 currentMovement;
-        private Vector2 movement;
-
-        private KeyPressProvider<MouseEvent> keyPressProvider;
+        private readonly InputReader inputReader;
+        private bool grab;
 
         internal MouseLinux(string path, Action<MouseMovement, MouseLinux> invokeAnyMouseMovement,
-            Action<MouseEvent, MouseLinux> invokeAnyMouseEvent) : base(path)
+            Action<MouseEvent, MouseLinux> invokeAnyMouseEvent)
         {
             this.invokeAnyMouseMovement = invokeAnyMouseMovement;
             this.invokeAnyMouseEvent = invokeAnyMouseEvent;
-            keyPressProvider = new KeyPressProvider<MouseEvent>(
-                e => OnEventDown?.Invoke(e),
-                e => OnEventUp?.Invoke(e));
+
+            inputReader = new InputReader(path, HandleEvent);
         }
 
-        protected override void HandleEvent(EventType type, short code, int value)
+        private void HandleEvent(EventType type, short code, int value)
         {
             switch (type)
             {
                 case EventType.EV_KEY:
-                    var mouseEvent = InputConverter.EventCodeToMouseEvent((EventCode) code);
+                    var mouseEvent = ConverterLinux.EventCodeToMouseEvent((EventCode) code);
                     var state = (KeyState) value;
-                    keyPressProvider.HandleEvent(mouseEvent, state);
+                    keyPressProvider.HandleEvent(mouseEvent, ConverterLinux.KeyStateToKeyEvent(state));
                     invokeAnyMouseEvent?.Invoke(mouseEvent, this);
                     break;
 
@@ -43,78 +40,44 @@ namespace MultiInput.Internal.Platforms.Linux
 
         private void RelativeMoveEventHandler(RelativeMovementAxis axis, int value)
         {
-            Vector2 movementNow;
             switch (axis)
             {
-                case RelativeMovementAxis.X:
-                    movementNow = new Vector2(value, 0);
+                case RelativeMovementAxis.X or RelativeMovementAxis.Y:
+                {
+                    var movementNow = axis == RelativeMovementAxis.X ? new Vector2(value, 0) : new Vector2(0, -value);
+
+                    movement.SetCurrent(movement.GetCurrent() + movementNow);
+
+                    // Debug.Log($"Mouse moved {movementNow}");
+
+                    var mouseMovement = new MouseMovement(movementNow);
+
+                    InvokeOnMove(mouseMovement);
+                    invokeAnyMouseMovement.Invoke(mouseMovement, this);
                     break;
-                case RelativeMovementAxis.Y:
-                    movementNow = new Vector2(0, -value); // unity: y is up, input: y is down
+                }
+                case RelativeMovementAxis.Wheel:
+                    wheel.SetCurrent(wheel.GetCurrent() + value);
                     break;
-                default:
-                    return;
+                case RelativeMovementAxis.HWheel:
+                    hWheel.SetCurrent(hWheel.GetCurrent() + value);
+                    break;
             }
-
-            lock (this)
-            {
-                currentMovement += movementNow;
-            }
-
-            // Debug.Log($"Mouse moved {movementNow}");
-
-            var mouseMovement = new MouseMovement(movementNow);
-
-            OnMove?.Invoke(mouseMovement);
-            invokeAnyMouseMovement.Invoke(mouseMovement, this);
         }
 
-        public override void Dispose()
+        public void Dispose()
         {
-            base.Dispose();
+            inputReader.Dispose();
         }
 
-        void IMouseInternal.StartMainLoop()
+        public override bool Grab
         {
-            keyPressProvider.StartMainLoop();
-
-            lock (this)
+            get => grab;
+            set
             {
-                movement = currentMovement = Vector2.zero;
+                grab = value;
+                inputReader.ReOpen(value);
             }
         }
-
-        void IMouseInternal.MainLoop()
-        {
-            keyPressProvider.MainLoop();
-
-            lock (this)
-            {
-                movement = currentMovement;
-                currentMovement = Vector2.zero;
-            }
-        }
-
-        void IMouseInternal.StopMainLoop()
-        {
-            keyPressProvider.StopMainLoop();
-
-            lock (this)
-            {
-                movement = currentMovement = Vector2.zero;
-            }
-        }
-
-        public event IMouse.Movement OnMove;
-        public event IMouse.Event OnEventUp;
-        public event IMouse.Event OnEventDown;
-
-        public MouseMovement GetMouseMovement() => new MouseMovement(movement);
-
-        public bool GetEvent(MouseEvent code) => keyPressProvider.KeysHeld.Contains(code);
-
-        public bool GetEventDown(MouseEvent code) => keyPressProvider.KeysDown.Contains(code);
-
-        public bool GetEventUp(MouseEvent code) => keyPressProvider.KeysUp.Contains(code);
     }
 }

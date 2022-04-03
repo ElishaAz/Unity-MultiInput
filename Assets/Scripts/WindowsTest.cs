@@ -1,20 +1,41 @@
 using System;
+using System.Collections.Concurrent;
 using MultiInput.Internal.Platforms.Windows;
+using MultiInput.Internal.Platforms.Windows.PInvokeNet;
 using UnityEngine;
 
 public class WindowsTest : MonoBehaviour
 {
-    private static MyWMListener wmListener = new MyWMListener();
+    private MyWMListener listener;
     private bool closed;
+
+    private readonly ConcurrentQueue<RawInput> inputQueue = new ConcurrentQueue<RawInput>();
 
     private void Awake()
     {
+        // listener = new MyWMListener(OnInput);
+        Debug.Log("@Awake");
         // wmListener = new MyWMListener();
         // wmListener.Start();
     }
 
-    private void OnDisable()
+    private bool OnInput(RawInput input)
     {
-        wmListener.Dispose();
+        inputQueue.Enqueue(input);
+        return true;
     }
+
+    private void Update()
+    {
+        // Listener.Update();
+        if (inputQueue.TryDequeue(out var val))
+        {
+            Debug.Log(val);
+        }
+    }
+
+    // private void OnDisable()
+    // {
+    //     wmListener.Dispose();
+    // }
 }

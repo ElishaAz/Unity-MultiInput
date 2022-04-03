@@ -5,28 +5,29 @@ using UnityEngine;
 
 namespace MultiInput.Internal.Platforms.Linux
 {
-    public class KeyboardLinux : InputReader, IKeyboardInternal
+    public class KeyboardLinux : IKeyboardInternal
     {
         private readonly InputReader inputReader;
         private readonly Action<KeyCode, KeyboardLinux> invokeAnyKeyboardPress;
 
         private readonly KeyPressProvider<KeyCode> keyPressProvider;
 
-        internal KeyboardLinux(string path, Action<KeyCode, KeyboardLinux> invokeAnyKeyboardPress) :
-            base(path)
+        internal KeyboardLinux(string path, Action<KeyCode, KeyboardLinux> invokeAnyKeyboardPress)
         {
             this.invokeAnyKeyboardPress = invokeAnyKeyboardPress;
             keyPressProvider = new KeyPressProvider<KeyCode>(
                 code => OnKeyPressed?.Invoke(code),
                 code => OnKeyReleased?.Invoke(code));
+
+            inputReader = new InputReader(path,HandleEvent);
         }
 
-        protected override void HandleEvent(EventType type, short code, int value)
+        private void HandleEvent(EventType type, short code, int value)
         {
             if (type != EventType.EV_KEY) return;
 
-            var keyCode = InputConverter.EventCodeToKeyCode((EventCode) code);
-            keyPressProvider.HandleEvent(keyCode, (KeyState) value);
+            var keyCode = ConverterLinux.EventCodeToKeyCode((EventCode) code);
+            keyPressProvider.HandleEvent(keyCode, ConverterLinux.KeyStateToKeyEvent((KeyState) value));
             invokeAnyKeyboardPress?.Invoke(keyCode, this);
         }
 
@@ -45,9 +46,9 @@ namespace MultiInput.Internal.Platforms.Linux
             keyPressProvider.StopMainLoop();
         }
 
-        public override void Dispose()
+        public void Dispose()
         {
-            base.Dispose();
+            inputReader.Dispose();
         }
 
 
@@ -68,5 +69,7 @@ namespace MultiInput.Internal.Platforms.Linux
         {
             return keyPressProvider.KeysUp.Contains(code);
         }
+
+        public bool Grab { get; set; }
     }
 }

@@ -5,7 +5,7 @@ namespace MultiInput.Internal.Platforms.Windows.PInvokeNet
     /// <summary>
     /// Enumeration containing the button data for raw mouse input.
     /// </summary>
-    [Flags()]
+    [Flags]
     public enum RawMouseButtons
         : ushort
     {
@@ -32,6 +32,8 @@ namespace MultiInput.Internal.Platforms.Windows.PInvokeNet
         /// <summary>Button 5 up.</summary>
         Button5Up = 0x0200,
         /// <summary>Mouse wheel moved.</summary>
-        MouseWheel = 0x0400
+        MouseWheel = 0x0400,
+        /// <summary>Mouse horizontal wheel moved.</summary>
+        MouseHWheel =0x0800
     }
 }

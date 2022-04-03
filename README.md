@@ -19,6 +19,8 @@ https://www.kernel.org/doc/html/v4.14/input/event-codes.html
 https://stackoverflow.com/questions/91234/multiple-keyboards-and-low-level-hooks
 https://forum.unity.com/threads/recieve-window_commands-in-unity.213741/
 https://stackoverflow.com/questions/27866645/registering-a-touch-screen-hid-with-registerrawinputdevices-does-not-work
+https://stackoverflow.com/questions/128561/registering-a-custom-win32-window-class-from-c-sharp
+https://stackoverflow.com/questions/68536114/raw-input-recive-wm-input-while-window-program-is-in-background
 
 
 https://stackoverflow.com/questions/6967108/is-idisposable-dispose-called-automatically

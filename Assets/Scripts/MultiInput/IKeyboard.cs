@@ -12,5 +12,7 @@ namespace MultiInput
         public bool GetKey(KeyCode code);
         public bool GetKeyDown(KeyCode code);
         public bool GetKeyUp(KeyCode code);
+
+        public bool Grab { get; set; }
     }
 }

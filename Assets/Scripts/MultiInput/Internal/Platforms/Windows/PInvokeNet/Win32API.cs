@@ -17,7 +17,7 @@ namespace MultiInput.Internal.Platforms.Windows.PInvokeNet
         [DllImport("user32.dll")]
         public static extern int GetRawInputData(IntPtr hRawInput, RawInputCommand uiCommand, out RawInput pData,
             ref int pcbSize, int cbSizeHeader);
-        
+
         [DllImport("User32.dll", SetLastError = true)]
         public static extern int GetRawInputBuffer(out RawInput pData, ref int pcbSize,
             int cbSizeHeader);
@@ -54,6 +54,67 @@ namespace MultiInput.Internal.Platforms.Windows.PInvokeNet
         public static extern IntPtr CallWindowProc(IntPtr lpPrevWndFunc, IntPtr hWnd, uint Msg, IntPtr wParam,
             IntPtr lParam);
 
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern IntPtr GetModuleHandleW([MarshalAs(UnmanagedType.LPWStr)] string lpModuleName);
+
+        [DllImport("kernel32.dll")]
+        public static extern IntPtr GetCurrentProcess();
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool IsWow64Process(IntPtr hProcess, out bool Wow64Process);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.U2)]
+        public static extern ushort RegisterClassExW([In] ref WndClassExW lpwcx);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern bool UnregisterClassW(IntPtr windowClass, IntPtr hInstance);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern IntPtr CreateWindowExW(uint dwExStyle, IntPtr windowClass,
+            [MarshalAs(UnmanagedType.LPWStr)] string lpWindowName,
+            uint dwStyle, int x, int y, int nWidth, int nHeight, IntPtr hWndParent, IntPtr hMenu, IntPtr hInstance,
+            IntPtr pvParam);
+        
+        [DllImport("user32.dll", SetLastError=true)]
+        public static extern IntPtr CreateWindowEx(
+            WindowStylesEx dwExStyle,
+            string lpClassName,
+            string lpWindowName,
+            WindowStyles dwStyle,
+            int x,
+            int y,
+            int nWidth,
+            int nHeight,
+            IntPtr hWndParent,
+            IntPtr hMenu,
+            IntPtr hInstance,
+            IntPtr lpParam);
+
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        public static extern IntPtr CreateWindowEx(uint dwExStyle, ushort regClassResult,
+            string lpWindowName, uint dwStyle, int x, int y, int nWidth, int nHeight,
+            IntPtr hWndParent, IntPtr hMenu, IntPtr hInstance, IntPtr pvParam);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern bool DestroyWindow(IntPtr hWnd);
+        
+        [DllImport("user32.dll")]
+        public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        /// <summary>
+        /// Calls the default window procedure to provide default processing for any window messages
+        /// that an application does not process. This function ensures that every message is processed.
+        /// DefWindowProc is called with the same parameters received by the window procedure.
+        /// </summary>
+        /// <param name="hWnd"></param>
+        /// <param name="uMsg"></param>
+        /// <param name="wParam"></param>
+        /// <param name="lParam"></param>
+        /// <returns></returns>
+        [DllImport("user32.dll")]
+        public static extern IntPtr DefWindowProcW(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam);
+
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         public static extern uint GetRawInputDeviceList
         (
@@ -69,9 +130,16 @@ namespace MultiInput.Internal.Platforms.Windows.PInvokeNet
         /// <returns>TRUE if successful, FALSE if not.</returns>
         [DllImport("user32.dll")]
         public static extern bool RegisterRawInputDevices(
-            [MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 0)] RawInputDevice[] pRawInputDevices, int uiNumDevices,
+            [MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 0)]
+            RawInputDevice[] pRawInputDevices, int uiNumDevices,
             int cbSize);
-        
+
+        [DllImport("User32.dll", SetLastError = true)]
+        public static extern int GetRegisteredRawInputDevices(
+            [In] [Out] [MarshalAs(UnmanagedType.LPArray)]
+            RawInputDevice[] pRawInputDevices, ref int puiNumDevices,
+            int cbSize);
+
         public const int GWLP_WNDPROC = -4;
     }
 }

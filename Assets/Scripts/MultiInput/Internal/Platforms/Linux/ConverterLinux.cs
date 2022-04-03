@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace MultiInput.Internal.Platforms.Linux
 {
-    public static class InputConverter
+    public static class ConverterLinux
     {
         public static KeyCode EventCodeToKeyCode(EventCode eventCode)
         {
@@ -156,6 +156,17 @@ namespace MultiInput.Internal.Platforms.Linux
                 EventCode.Touch => MouseEvent.Touch,
 
                 _ => MouseEvent.Other
+            };
+        }
+
+        public static KeyEventState KeyStateToKeyEvent(KeyState state)
+        {
+            return state switch
+            {
+                KeyState.KeyUp => KeyEventState.Up,
+                KeyState.KeyDown => KeyEventState.Down,
+                KeyState.KeyHold => KeyEventState.Held,
+                _ => throw new ArgumentOutOfRangeException(nameof(state), state, null)
             };
         }
     }

@@ -4,15 +4,24 @@ namespace MultiInput
 {
     public interface IMouse
     {
-        public delegate void Event(MouseEvent mouseEvent);
+        public delegate void EventAction(MouseEvent mouseEvent);
 
-        public delegate void Movement(MouseMovement movement);
+        public delegate void MovementAction(MouseMovement movement);
 
-        public event Movement OnMove;
-        public event Event OnEventUp;
-        public event Event OnEventDown;
+        public delegate void WheelAction(float movement);
+
+        public event MovementAction OnMove;
+        public event WheelAction OnWheel;
+        public event WheelAction OnHWheel;
+        public event EventAction OnEventUp;
+        public event EventAction OnEventDown;
 
         public MouseMovement GetMouseMovement();
+
+        public float GetWheelMovement();
+        public float GetHWheelMovement();
+
+        public bool Grab { get; set; }
 
         public bool GetEvent(MouseEvent code);
         public bool GetEventDown(MouseEvent code);

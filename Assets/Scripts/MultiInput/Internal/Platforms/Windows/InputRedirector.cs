@@ -1,3 +1,5 @@
+// #define ABCDE
+
 using AOT;
 using System;
 using System.ComponentModel;
@@ -7,6 +9,7 @@ using UnityEngine;
 
 namespace MultiInput.Internal.Platforms.Windows
 {
+#if ABCDE
     public class InputRedirector : MonoBehaviour
     {
 #if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
@@ -242,7 +245,8 @@ namespace MultiInput.Internal.Platforms.Windows
             // too slow with high input polling rate devices
             while (true)
             {
-                var rawInputCount = Win32API.GetRawInputBuffer(out input, ref sizeofRawInput, Marshal.SizeOf(typeof(RawInputHeader)));
+                var rawInputCount =
+ Win32API.GetRawInputBuffer(out input, ref sizeofRawInput, Marshal.SizeOf(typeof(RawInputHeader)));
                 if (rawInputCount == 0)
                     break;
 
@@ -350,4 +354,5 @@ namespace MultiInput.Internal.Platforms.Windows
 
 #endif // UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
     }
+#endif
 }

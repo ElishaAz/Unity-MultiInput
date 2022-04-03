@@ -5,6 +5,8 @@ namespace MultiInput
         LeftMouse,
         RightMouse,
         MiddleMouse,
+        ForthMouse,
+        FifthMouse,
         MouseBack,
         MouseForward,
 

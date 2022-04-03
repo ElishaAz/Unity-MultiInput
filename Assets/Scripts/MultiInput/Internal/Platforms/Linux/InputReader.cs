@@ -5,6 +5,8 @@ using UnityEngine;
 
 namespace MultiInput.Internal.Platforms.Linux
 {
+    public delegate void HandleEventAction(EventType type, short code, int value);
+
     /// <summary>
     /// This is where the bulk of the work happens. Here we have a class, where you provide the
     /// path to one of the event files and it publishes updates whenever it comes in.
@@ -15,8 +17,11 @@ namespace MultiInput.Internal.Platforms.Linux
     /// is included with each button event, but if you're interested, you can find it on the first
     /// 16 bits on the buffer.
     /// </summary>
-    public abstract class InputReader : IDisposable
+    public class InputReader : IDisposable
     {
+        private readonly string path;
+
+        private readonly HandleEventAction handleEvent;
         // public delegate void RaiseKeyPress(KeyPressEvent e);
         //
         // public delegate void RaiseMouseMove(MouseMoveEvent e);
@@ -31,7 +36,17 @@ namespace MultiInput.Internal.Platforms.Linux
         private FileStream _stream;
         private bool _disposing;
 
-        protected InputReader(string path)
+        private bool reopen = true;
+        private bool grabWhenReopening = false;
+
+        public InputReader(string path, HandleEventAction handleEvent)
+        {
+            this.path = path;
+            this.handleEvent = handleEvent;
+            Start(false);
+        }
+
+        private void Start(bool grab)
         {
             _stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
 
@@ -47,12 +62,15 @@ namespace MultiInput.Internal.Platforms.Linux
 
                 _stream.Read(_buffer, 0, BufferLength);
 
+                if (_disposing)
+                    break;
+
                 var type = BitConverter.ToInt16(new[] {_buffer[16], _buffer[17]}, 0);
                 var code = BitConverter.ToInt16(new[] {_buffer[18], _buffer[19]}, 0);
                 var value = BitConverter.ToInt32(new[] {_buffer[20], _buffer[21], _buffer[22], _buffer[23]}, 0);
 
                 var eventType = (EventType) type;
-                HandleEvent(eventType,code,value);
+                handleEvent(eventType, code, value);
 
                 // switch (eventType)
                 // {
@@ -71,9 +89,21 @@ namespace MultiInput.Internal.Platforms.Linux
                 //         break;
                 // }
             }
-        }
 
-        protected abstract void HandleEvent(EventType type, short code, int value);
+            _stream.Dispose();
+            _stream = null;
+
+            lock (this)
+            {
+                if (reopen)
+                {
+                    Start(grabWhenReopening);
+                }
+
+                reopen = false;
+                grabWhenReopening = false;
+            }
+        }
 
         // private void HandleKeyPressEvent(short code, int value)
         // {
@@ -83,11 +113,19 @@ namespace MultiInput.Internal.Platforms.Linux
         //     OnKeyPress?.Invoke(e);
         // }
 
-        public virtual void Dispose()
+        public void Dispose()
         {
             _disposing = true;
-            _stream.Dispose();
-            _stream = null;
+        }
+
+        public void ReOpen(bool grab)
+        {
+            lock (this)
+            {
+                reopen = true;
+                grabWhenReopening = true;
+                Dispose();
+            }
         }
     }
 }

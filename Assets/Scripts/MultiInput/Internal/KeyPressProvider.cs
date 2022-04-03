@@ -1,29 +1,29 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using UnityEngine;
+using MultiInput.Internal.Platforms.Linux;
 
-namespace MultiInput.Internal.Platforms.Linux
+namespace MultiInput.Internal
 {
     public class KeyPressProvider<T>
     {
         private struct MyKeyEvent
         {
-            public MyKeyEvent(T code, KeyState state)
+            public MyKeyEvent(T code, KeyEventState state)
             {
                 Code = code;
                 State = state;
             }
 
             public readonly T Code;
-            public readonly KeyState State;
+            public readonly KeyEventState State;
         }
-        
+
         private readonly ConcurrentQueue<MyKeyEvent> actions = new ConcurrentQueue<MyKeyEvent>();
         public readonly HashSet<T> KeysDown = new HashSet<T>();
         public readonly HashSet<T> KeysUp = new HashSet<T>();
         public readonly HashSet<T> KeysHeld = new HashSet<T>();
-        
+
         private readonly Action<T> onKeyPressed;
         private readonly Action<T> onKeyReleased;
 
@@ -32,27 +32,29 @@ namespace MultiInput.Internal.Platforms.Linux
             this.onKeyPressed = onKeyPressed;
             this.onKeyReleased = onKeyReleased;
         }
-        
-        public void HandleEvent(T key, KeyState state)
+
+        public void HandleEvent(T key, KeyEventState state)
         {
             switch (state)
             {
-                case KeyState.KeyDown:
+                case KeyEventState.Down:
                     KeysHeld.Add(key);
                     onKeyPressed?.Invoke(key);
                     break;
-                case KeyState.KeyHold:
+                case KeyEventState.Held:
                     KeysHeld.Add(key);
                     break;
-                case KeyState.KeyUp:
+                case KeyEventState.Up:
                     KeysHeld.Remove(key);
                     onKeyReleased?.Invoke(key);
                     break;
+                case KeyEventState.Released:
+                    KeysHeld.Remove(key);
+                    break;
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    throw new ArgumentOutOfRangeException(nameof(state), state, null);
             }
 
-            if (state == KeyState.KeyHold) return;
             var myEvent = new MyKeyEvent(key, state);
             actions.Enqueue(myEvent);
         }
@@ -73,10 +75,10 @@ namespace MultiInput.Internal.Platforms.Linux
             {
                 switch (action.State)
                 {
-                    case KeyState.KeyDown:
+                    case KeyEventState.Down:
                         KeysDown.Add(action.Code);
                         break;
-                    case KeyState.KeyUp:
+                    case KeyEventState.Up:
                         KeysUp.Add(action.Code);
                         break;
                 }
