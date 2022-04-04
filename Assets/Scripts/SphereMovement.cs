@@ -1,4 +1,5 @@
 using MultiInput;
+using MultiInput.Mouse;
 using UnityEngine;
 
 public class SphereMovement : MonoBehaviour
@@ -13,6 +14,7 @@ public class SphereMovement : MonoBehaviour
         this.mouse = mouse;
         GetComponent<MeshRenderer>().material.color = Random.ColorHSV();
 
+        mouse.Grab = true;
         initialized = true;
     }
 

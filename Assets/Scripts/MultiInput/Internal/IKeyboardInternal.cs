@@ -1,3 +1,5 @@
+using MultiInput.Keyboard;
+
 namespace MultiInput.Internal
 {
     public interface IKeyboardInternal : IKeyboard

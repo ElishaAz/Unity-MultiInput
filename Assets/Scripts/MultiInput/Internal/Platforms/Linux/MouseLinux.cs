@@ -1,23 +1,28 @@
 using System;
+using System.Runtime.CompilerServices;
+using MultiInput.Mouse;
 using UnityEngine;
 
 namespace MultiInput.Internal.Platforms.Linux
 {
     public class MouseLinux : MouseAbstract
     {
-        private readonly Action<MouseMovement, MouseLinux> invokeAnyMouseMovement;
-        private readonly Action<MouseEvent, MouseLinux> invokeAnyMouseEvent;
-
+        private readonly Action<IMouseInternal> invokeMouseRemoved;
         private readonly InputReader inputReader;
         private bool grab;
 
-        internal MouseLinux(string path, Action<MouseMovement, MouseLinux> invokeAnyMouseMovement,
-            Action<MouseEvent, MouseLinux> invokeAnyMouseEvent)
+        internal MouseLinux(string path, Action<IMouseInternal> invokeMouseRemoved,
+            AnyMouseMovement invokeAnyMouseMovement,
+            AnyMouseEvent invokeAnyMouseEvent, AnyMouseWheel invokeAnyMouseWheel) : base(invokeAnyMouseMovement,
+            invokeAnyMouseEvent, invokeAnyMouseWheel)
         {
-            this.invokeAnyMouseMovement = invokeAnyMouseMovement;
-            this.invokeAnyMouseEvent = invokeAnyMouseEvent;
+            this.invokeMouseRemoved = invokeMouseRemoved;
+            inputReader = new InputReader(path, HandleEvent, HandleDisconnect);
+        }
 
-            inputReader = new InputReader(path, HandleEvent);
+        private void HandleDisconnect()
+        {
+            invokeMouseRemoved(this);
         }
 
         private void HandleEvent(EventType type, short code, int value)
@@ -28,7 +33,6 @@ namespace MultiInput.Internal.Platforms.Linux
                     var mouseEvent = ConverterLinux.EventCodeToMouseEvent((EventCode) code);
                     var state = (KeyState) value;
                     keyPressProvider.HandleEvent(mouseEvent, ConverterLinux.KeyStateToKeyEvent(state));
-                    invokeAnyMouseEvent?.Invoke(mouseEvent, this);
                     break;
 
                 case EventType.EV_REL:
@@ -53,7 +57,6 @@ namespace MultiInput.Internal.Platforms.Linux
                     var mouseMovement = new MouseMovement(movementNow);
 
                     InvokeOnMove(mouseMovement);
-                    invokeAnyMouseMovement.Invoke(mouseMovement, this);
                     break;
                 }
                 case RelativeMovementAxis.Wheel:
@@ -72,11 +75,14 @@ namespace MultiInput.Internal.Platforms.Linux
 
         public override bool Grab
         {
+            [MethodImpl(MethodImplOptions.Synchronized)]
             get => grab;
+
+            [MethodImpl(MethodImplOptions.Synchronized)]
             set
             {
                 grab = value;
-                inputReader.ReOpen(value);
+                inputReader.SetGrab(value);
             }
         }
     }

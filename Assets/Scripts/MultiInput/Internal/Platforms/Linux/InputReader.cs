@@ -1,6 +1,8 @@
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using MultiInput.Internal.Platforms.Linux.IOCtlPInvoke;
 using UnityEngine;
 
 namespace MultiInput.Internal.Platforms.Linux
@@ -22,109 +24,93 @@ namespace MultiInput.Internal.Platforms.Linux
         private readonly string path;
 
         private readonly HandleEventAction handleEvent;
-        // public delegate void RaiseKeyPress(KeyPressEvent e);
-        //
-        // public delegate void RaiseMouseMove(MouseMoveEvent e);
-        //
-        // public event RaiseKeyPress OnKeyPress;
-        // public event RaiseMouseMove OnMouseMove;
+        private readonly Action onDisconnect;
 
         private const int BufferLength = 24;
 
-        private readonly byte[] _buffer = new byte[BufferLength];
+        private readonly byte[] buffer = new byte[BufferLength];
 
-        private FileStream _stream;
-        private bool _disposing;
+        private bool disposing;
 
-        private bool reopen = true;
-        private bool grabWhenReopening = false;
+        private SafeUnixHandle handle;
+        private Task task;
 
-        public InputReader(string path, HandleEventAction handleEvent)
+        public InputReader(string path, HandleEventAction handleEvent, Action onDisconnect)
         {
             this.path = path;
             this.handleEvent = handleEvent;
-            Start(false);
-        }
+            this.onDisconnect = onDisconnect;
 
-        private void Start(bool grab)
-        {
-            _stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            handle = UnsafeNativeMethods.Open(path, 0);
 
-            Task.Run(Run);
+            task = Task.Run(Run);
         }
 
         private void Run()
         {
-            while (true)
+            try
             {
-                if (_disposing)
-                    break;
-
-                _stream.Read(_buffer, 0, BufferLength);
-
-                if (_disposing)
-                    break;
-
-                var type = BitConverter.ToInt16(new[] {_buffer[16], _buffer[17]}, 0);
-                var code = BitConverter.ToInt16(new[] {_buffer[18], _buffer[19]}, 0);
-                var value = BitConverter.ToInt32(new[] {_buffer[20], _buffer[21], _buffer[22], _buffer[23]}, 0);
-
-                var eventType = (EventType) type;
-                handleEvent(eventType, code, value);
-
-                // switch (eventType)
-                // {
-                //     case EventType.EV_KEY:
-                //         HandleKeyPressEvent(code, value);
-                //         break;
-                //     case EventType.EV_REL:
-                //         var axis = (RelativeMovementAxis) code;
-                //         var e = new MouseMoveEvent(axis, value);
-                //         Debug.Log($"Mouse moved {axis}, {value}");
-                //         OnMouseMove?.Invoke(e);
-                //         break;
-                //     case EventType.EV_ABS:
-                //         Debug.Log($"Mouse moved {code}, {value}");
-                //         // OnMouseMove?.Invoke(e);
-                //         break;
-                // }
-            }
-
-            _stream.Dispose();
-            _stream = null;
-
-            lock (this)
-            {
-                if (reopen)
+                while (true)
                 {
-                    Start(grabWhenReopening);
+                    if (disposing)
+                        break;
+
+                    var response = UnsafeNativeMethods.Read(handle, buffer, BufferLength);
+
+                    if (response == -1)
+                    {
+                        var error = Marshal.GetLastWin32Error();
+
+                        if (error == 19) // Device not found = device disconnected
+                        {
+                            onDisconnect();
+                        }
+                        else
+                        {
+                            Debug.LogException(new UnixIOException(error));
+                        }
+
+                        break;
+                    }
+
+                    if (disposing)
+                        break;
+
+                    var type = BitConverter.ToInt16(new[] {buffer[16], buffer[17]}, 0);
+                    var code = BitConverter.ToInt16(new[] {buffer[18], buffer[19]}, 0);
+                    var value = BitConverter.ToInt32(new[] {buffer[20], buffer[21], buffer[22], buffer[23]}, 0);
+
+                    var eventType = (EventType) type;
+
+                    handleEvent(eventType, code, value);
                 }
 
-                reopen = false;
-                grabWhenReopening = false;
+                handle.Dispose();
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
             }
         }
-
-        // private void HandleKeyPressEvent(short code, int value)
-        // {
-        //     var c = (EventCode) code;
-        //     var s = (KeyState) value;
-        //     var e = new KeyPressEvent(c, s);
-        //     OnKeyPress?.Invoke(e);
-        // }
 
         public void Dispose()
         {
-            _disposing = true;
+            disposing = true;
         }
 
-        public void ReOpen(bool grab)
+        ~InputReader()
         {
-            lock (this)
+            Dispose();
+            Debug.Log($"Disposing {path}");
+            task.Wait(100);
+        }
+
+        public void SetGrab(bool grab)
+        {
+            if (disposing) return;
+            if (UnsafeNativeMethods.Ioctl(handle, UnsafeNativeMethods.EVIOCGRAB, grab) == -1)
             {
-                reopen = true;
-                grabWhenReopening = true;
-                Dispose();
+                Debug.LogException(new UnixIOException());
             }
         }
     }

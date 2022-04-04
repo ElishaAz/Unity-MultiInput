@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace MultiInput
+namespace MultiInput.Keyboard
 {
     public delegate void AnyKeyboardAction(KeyCode code, IKeyboard keyboard);
 }

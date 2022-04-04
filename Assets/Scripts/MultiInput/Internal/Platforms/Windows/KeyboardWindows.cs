@@ -1,26 +1,38 @@
+using System;
+using MultiInput.Internal.Platforms.Linux;
+using MultiInput.Internal.Platforms.Windows.PInvokeNet;
+using MultiInput.Keyboard;
 using UnityEngine;
 
 namespace MultiInput.Internal.Platforms.Windows
 {
-    public class KeyboardWindows: IKeyboardInternal
+    public class KeyboardWindows : KeyboardAbstract
     {
-        public event IKeyboard.Action OnKeyPressed;
-        public event IKeyboard.Action OnKeyReleased;
-        public bool GetKey(KeyCode code)
+        public KeyboardWindows(AnyKeyboardAction invokeAnyKeyboardPress): base(invokeAnyKeyboardPress)
         {
-            throw new System.NotImplementedException();
         }
 
-        public bool GetKeyDown(KeyCode code)
+        internal bool Process(RawKeyboard rawKeyboard)
         {
-            throw new System.NotImplementedException();
+            var scanCode = rawKeyboard.MakeCode;
+            var state = (rawKeyboard.Flags & RawKeyboardFlags.KeyBreak) != 0 ? KeyEventState.Up : KeyEventState.Down;
+
+            // Key break scan codes are supposed to be 0x80 more than the regular scan code
+            if (scanCode >= 0x80)
+            {
+                state = KeyEventState.Up;
+                scanCode -= 0x80;
+            }
+
+            var code = ConverterWindows.ScanCodeToKeyCode((KeyScanCode) scanCode,
+                (rawKeyboard.Flags & RawKeyboardFlags.KeyE0) != 0);
+
+            keyPressProvider.HandleEvent(code, state);
+
+            return Grab;
         }
 
-        public bool GetKeyUp(KeyCode code)
-        {
-            throw new System.NotImplementedException();
-        }
 
-        public bool Grab { get; set; }
+        public override bool Grab { get; set; }
     }
 }

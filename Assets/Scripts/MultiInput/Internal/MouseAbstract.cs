@@ -1,20 +1,41 @@
+using System;
+using MultiInput.Mouse;
 using UnityEngine;
 
 namespace MultiInput.Internal
 {
     public abstract class MouseAbstract : IMouseInternal
     {
-        protected readonly LoopLockVal<Vector2> movement = new LoopLockVal<Vector2>();
-        protected readonly LoopLockVal<float> wheel = new LoopLockVal<float>();
-        protected readonly LoopLockVal<float> hWheel = new LoopLockVal<float>();
+        protected readonly CommitLockVal<Vector2> movement = new CommitLockVal<Vector2>();
+        protected readonly CommitLockVal<float> wheel = new CommitLockVal<float>();
+        protected readonly CommitLockVal<float> hWheel = new CommitLockVal<float>();
 
         protected readonly KeyPressProvider<MouseEvent> keyPressProvider;
+        private readonly AnyMouseMovement invokeAnyMouseMovement;
+        private readonly AnyMouseEvent invokeAnyMouseEvent;
+        private readonly AnyMouseWheel invokeAnyMouseWheel;
 
-        protected MouseAbstract()
+        protected MouseAbstract(AnyMouseMovement invokeAnyMouseMovement,
+            AnyMouseEvent invokeAnyMouseEvent, AnyMouseWheel invokeAnyMouseWheel)
         {
+            this.invokeAnyMouseWheel = invokeAnyMouseWheel;
+            this.invokeAnyMouseEvent = invokeAnyMouseEvent;
+            this.invokeAnyMouseMovement = invokeAnyMouseMovement;
+
             keyPressProvider = new KeyPressProvider<MouseEvent>(
-                e => OnEventDown?.Invoke(e),
-                e => OnEventUp?.Invoke(e));
+                OnKeyPressed,
+                OnKeyReleased);
+        }
+
+        private void OnKeyPressed(MouseEvent e)
+        {
+            OnEventDown?.Invoke(e);
+            invokeAnyMouseEvent(e, this);
+        }
+
+        private void OnKeyReleased(MouseEvent e)
+        {
+            OnEventUp?.Invoke(e);
         }
 
         #region main_loop
@@ -61,15 +82,33 @@ namespace MultiInput.Internal
         #endregion
 
         public event IMouse.MovementAction OnMove;
-        protected void InvokeOnMove(MouseMovement m) => OnMove?.Invoke(m);
+
+        protected void InvokeOnMove(MouseMovement m)
+        {
+            OnMove?.Invoke(m);
+            invokeAnyMouseMovement(m, this);
+        }
+
         public MouseMovement GetMouseMovement() => new MouseMovement(movement.GetCommitted());
 
         public event IMouse.WheelAction OnWheel;
-        protected void InvokeOnWheel(float m) => OnWheel?.Invoke(m);
+
+        protected void InvokeOnWheel(float m)
+        {
+            OnWheel?.Invoke(m);
+            invokeAnyMouseWheel(m, false, this);
+        }
+
         public float GetWheelMovement() => wheel.GetCommitted();
 
         public event IMouse.WheelAction OnHWheel;
-        protected void InvokeOnHWheel(float m) => OnHWheel?.Invoke(m);
+
+        protected void InvokeOnHWheel(float m)
+        {
+            OnHWheel?.Invoke(m);
+            invokeAnyMouseWheel(m, true, this);
+        }
+
         public float GetHWheelMovement() => hWheel.GetCommitted();
 
 

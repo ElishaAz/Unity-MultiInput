@@ -60,7 +60,6 @@ namespace MultiInput.Internal.Platforms.Windows
         private void Start()
         {
             if (isRunning) return;
-            Debug.Log("Starting MyWMListener");
 
             windowClass = RegisterWindowClass(out var wndClass);
 
@@ -114,7 +113,15 @@ namespace MultiInput.Internal.Platforms.Windows
             var ret = Win32API.RegisterRawInputDevices(rid, rid.Length,
                 Marshal.SizeOf(typeof(RawInputDevice)));
 
-            var devices = GetAllRawDevices().ToHashSet();
+            var allRawDevices = GetAllRawDevices();
+            if (allRawDevices == null)
+            {
+                var error = Marshal.GetLastWin32Error();
+                Debug.LogError($"GetAllRawDevices failed ({error}): " + new Win32Exception(error).Message);
+                return ret;
+            }
+
+            var devices = allRawDevices.ToHashSet();
 
             foreach (var device in rawInputDevices.Except(devices))
             {
@@ -156,10 +163,9 @@ namespace MultiInput.Internal.Platforms.Windows
 
             // First call the system routine with a null pointer
             // for the array to get the size needed for the list
-            uint retValue = Win32API.GetRawInputDeviceList(null, ref deviceCount, dwSize);
+            var retValue = Win32API.GetRawInputDeviceList(null, ref deviceCount, dwSize);
 
-            // If anything but zero is returned, the call failed, so return a null list
-            if (0 != retValue)
+            if (retValue == -1)
                 return null;
 
             // Now allocate an array of the specified number of entries
@@ -168,14 +174,8 @@ namespace MultiInput.Internal.Platforms.Windows
             // Now make the call again, using the array
             retValue = Win32API.GetRawInputDeviceList(deviceList, ref deviceCount, dwSize);
 
-            // Free up the memory we first got the information into as
-            // it is no longer needed, since the structures have been
-            // copied to the deviceList array.
-            //IntPtr pRawInputDeviceList = Marshal.AllocHGlobal((int)(dwSize * deviceCount));
-            //Marshal.FreeHGlobal(pRawInputDeviceList);
-
             // Finally, return the filled in list
-            return 0 != retValue ? null : deviceList;
+            return -1 == retValue ? null : deviceList;
         }
 
 
@@ -223,7 +223,6 @@ namespace MultiInput.Internal.Platforms.Windows
         {
             try
             {
-                Debug.Log((WM) message);
                 if (message != (uint) WM.INPUT) return Win32API.DefWindowProcW(window, message, wParam, lParam);
 
                 var size = Marshal.SizeOf(typeof(RawInput));

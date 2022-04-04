@@ -3,12 +3,12 @@ using System.Runtime.CompilerServices;
 
 namespace MultiInput.Internal
 {
-    public class LoopLockVal<T>
+    public class CommitLockVal<T>
     {
         private T currentValue;
         private T committedValue;
 
-        public LoopLockVal(T initialValue = default)
+        public CommitLockVal(T initialValue = default)
         {
             currentValue = committedValue = initialValue;
         }

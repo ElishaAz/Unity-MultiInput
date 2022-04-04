@@ -1,4 +1,4 @@
-namespace MultiInput
+namespace MultiInput.Mouse
 {
     public class MouseAction
     {

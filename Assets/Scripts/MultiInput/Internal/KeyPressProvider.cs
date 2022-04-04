@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using MultiInput.Internal.Platforms.Linux;
+using UnityEngine;
 
 namespace MultiInput.Internal
 {
@@ -63,7 +64,6 @@ namespace MultiInput.Internal
         {
             KeysDown.Clear();
             KeysUp.Clear();
-            KeysHeld.Clear();
         }
 
         public void MainLoop()
@@ -89,7 +89,6 @@ namespace MultiInput.Internal
         {
             KeysDown.Clear();
             KeysUp.Clear();
-            KeysHeld.Clear();
         }
     }
 }

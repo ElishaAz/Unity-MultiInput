@@ -1,4 +1,5 @@
 using System;
+using MultiInput.Mouse;
 using UnityEngine;
 
 namespace MultiInput.Internal.Platforms.Linux

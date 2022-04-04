@@ -1,10 +1,18 @@
+using System;
 using MultiInput.Internal.Platforms.Windows.PInvokeNet;
+using MultiInput.Mouse;
 using UnityEngine;
 
 namespace MultiInput.Internal.Platforms.Windows
 {
     public class MouseWindows : MouseAbstract
     {
+        public MouseWindows(AnyMouseMovement invokeAnyMouseMovement,
+            AnyMouseEvent invokeAnyMouseEvent,
+            AnyMouseWheel invokeAnyMouseWheel) : base(invokeAnyMouseMovement, invokeAnyMouseEvent, invokeAnyMouseWheel)
+        {
+        }
+
         #region process_input
 
         internal bool Process(RawMouse rawMouse)

@@ -1,8 +1,8 @@
 using UnityEngine;
 
-namespace MultiInput
+namespace MultiInput.Keyboard
 {
-    public interface IKeyboard
+    public interface IKeyboard : IInput
     {
         public delegate void Action(KeyCode code);
 
@@ -12,7 +12,5 @@ namespace MultiInput
         public bool GetKey(KeyCode code);
         public bool GetKeyDown(KeyCode code);
         public bool GetKeyUp(KeyCode code);
-
-        public bool Grab { get; set; }
     }
 }

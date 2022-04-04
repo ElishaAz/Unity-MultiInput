@@ -4,6 +4,8 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using DefaultNamespace;
 using MultiInput;
+using MultiInput.Keyboard;
+using MultiInput.Mouse;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour

@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Threading;
 using MultiInput.Internal;
 using UnityEngine;
@@ -7,11 +8,17 @@ namespace MultiInput
     public class InputManagerMono : MonoBehaviour
     {
         [SerializeField] private bool setDontDestroyOnLoad = true;
+        [SerializeField] public bool scanForNewDevices = false;
+        [SerializeField] public float scanInterval = 1f;
 
         private static bool instanceExists;
 
         private InputManagerImplPicker implPicker;
         private bool currentIsActiveInstance;
+        private bool scanForNewDevicesRunning = false;
+        private float currentScanInterval;
+
+        private WaitForSeconds scanWait;
 
         private void Awake()
         {
@@ -30,38 +37,53 @@ namespace MultiInput
             {
                 Debug.LogWarning("Make sure there is no more than one InputManagerMono instance at a given time!");
                 Destroy(gameObject);
+                return;
             }
 
             implPicker = InputManagerImplPicker.Instance;
+
+            scanWait = new WaitForSeconds(scanInterval);
+            currentScanInterval = scanInterval;
+        }
+
+        private IEnumerator ScanCoroutine()
+        {
+            scanForNewDevicesRunning = true;
+            while (scanForNewDevicesRunning && scanForNewDevices)
+            {
+                yield return scanWait;
+                implPicker.ScanForNewDevices();
+            }
+
+            scanForNewDevicesRunning = false;
         }
 
         private void OnEnable()
         {
             if (!currentIsActiveInstance) return;
 
-            foreach (var keyboard in implPicker.InputManagerImpl.Keyboards)
-            {
-                keyboard.StartMainLoop();
-            }
+            implPicker.CallStartMainLoop();
 
-            foreach (var mouse in implPicker.InputManagerImpl.Mice)
-            {
-                mouse.StartMainLoop();
-            }
+            if (scanForNewDevices && !scanForNewDevicesRunning)
+                StartCoroutine(ScanCoroutine());
         }
 
         private void Update()
         {
             if (!currentIsActiveInstance) return;
 
-            foreach (var keyboard in implPicker.InputManagerImpl.Keyboards)
+            implPicker.CallMainLoop();
+
+            // ReSharper disable once CompareOfFloatsByEqualityOperator as they should be exactly the same
+            if (scanInterval != currentScanInterval)
             {
-                keyboard.MainLoop();
+                scanWait = new WaitForSeconds(scanInterval);
+                scanInterval = currentScanInterval;
             }
 
-            foreach (var mouse in implPicker.InputManagerImpl.Mice)
+            if (!scanForNewDevicesRunning && !scanForNewDevices)
             {
-                mouse.MainLoop();
+                StartCoroutine(ScanCoroutine());
             }
         }
 
@@ -69,15 +91,9 @@ namespace MultiInput
         {
             if (!currentIsActiveInstance) return;
 
-            foreach (var keyboard in implPicker.InputManagerImpl.Keyboards)
-            {
-                keyboard.StopMainLoop();
-            }
+            implPicker.CallStopMainLoop();
 
-            foreach (var mouse in implPicker.InputManagerImpl.Mice)
-            {
-                mouse.StopMainLoop();
-            }
+            scanForNewDevicesRunning = false;
         }
 
         private void OnDestroy()
@@ -85,7 +101,7 @@ namespace MultiInput
             if (!currentIsActiveInstance) return;
 
             instanceExists = false;
-            InputManagerImplPicker.Instance.Dispose();
+            implPicker.Dispose();
         }
     }
 }

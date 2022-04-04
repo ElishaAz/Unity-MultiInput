@@ -2,6 +2,8 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace MultiInput.Internal.Platforms.Linux
@@ -26,12 +28,17 @@ namespace MultiInput.Internal.Platforms.Linux
     /// I do intend to fix it in my own app implementation, but I don't have time to take care of it now.
     /// </item></list>
     /// </summary>
-    public class InputManagerLinux : IInputManager
+    public class InputManagerLinux : InputManagerAbstract
     {
-        private readonly List<KeyboardLinux> keyboards = new List<KeyboardLinux>();
-        private readonly List<MouseLinux> mice = new List<MouseLinux>();
+        private readonly Dictionary<string, KeyboardLinux> keyboards = new Dictionary<string, KeyboardLinux>();
+        private readonly Dictionary<string, MouseLinux> mice = new Dictionary<string, MouseLinux>();
 
         public InputManagerLinux()
+        {
+            ScanForDevices();
+        }
+
+        private void ScanForDevices()
         {
             var keyboardFiles = Directory.GetFiles("/dev/input/by-path/", "*-event-kbd");
             var mouseFiles = Directory.GetFiles("/dev/input/by-path/", "*-event-mouse");
@@ -39,26 +46,31 @@ namespace MultiInput.Internal.Platforms.Linux
 
             foreach (var file in keyboardFiles)
             {
-                var keyboard = new KeyboardLinux(file, InvokeAnyKeyboardPress);
-                keyboards.Add(keyboard);
+                if (keyboards.ContainsKey(file)) continue;
+                var keyboard = new KeyboardLinux(file, InvokeKeyboardRemoved, InvokeAnyKeyboardPress);
+                keyboards.Add(file, keyboard);
+                InvokeKeyboardAdded(keyboard);
             }
 
             foreach (var file in mouseFiles)
             {
-                var mouse = new MouseLinux(file, InvokeAnyMouseMovement, InvokeAnyMousePress);
-                mice.Add(mouse);
+                if (mice.ContainsKey(file)) continue;
+                var mouse = new MouseLinux(file, InvokeMouseRemoved, InvokeAnyMouseMovement, InvokeAnyMouseEvent,
+                    InvokeAnyMouseWheel);
+                mice.Add(file, mouse);
+                InvokeMouseAdded(mouse);
             }
-            // Debug.Log($"Added {mouseFiles.Length} mice.");
         }
 
-        public void Dispose()
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public override void Dispose()
         {
-            foreach (var keyboard in keyboards)
+            foreach (var (_, keyboard) in keyboards)
             {
                 keyboard.Dispose();
             }
 
-            foreach (var mouse in mice)
+            foreach (var (_, mouse) in mice)
             {
                 mouse.Dispose();
             }
@@ -67,31 +79,10 @@ namespace MultiInput.Internal.Platforms.Linux
             mice.Clear();
         }
 
-        private void InvokeAnyKeyboardPress(KeyCode code, KeyboardLinux keyboard)
+        [MethodImpl(MethodImplOptions.Synchronized)]
+        public override void ScanForNewDevices()
         {
-            OnAnyKeyboardPress?.Invoke(code, keyboard);
+            ScanForDevices();
         }
-
-        private void InvokeAnyMousePress(MouseEvent mouseEvent, MouseLinux mouse)
-        {
-            OnAnyMouseClick?.Invoke(mouseEvent, mouse);
-        }
-
-        private void InvokeAnyMouseMovement(MouseMovement mouseMovement, MouseLinux mouse)
-        {
-            OnAnyMouseMovement?.Invoke(mouseMovement, mouse);
-        }
-
-        public IReadOnlyList<IKeyboardInternal> Keyboards => keyboards;
-        public IReadOnlyList<IMouseInternal> Mice => mice;
-
-        public event AnyKeyboardAction OnAnyKeyboardPress;
-
-        public event AnyMouseEvent OnAnyMouseClick;
-        public event AnyMouseMovement OnAnyMouseMovement;
-        public event KeyboardAddedAction OnKeyboardAdded;
-        public event KeyboardRemovedAction OnKeyboardRemoved;
-        public event MouseAddedAction OnMouseAdded;
-        public event MouseRemovedAction OnMouseRemoved;
     }
 }

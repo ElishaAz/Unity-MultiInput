@@ -199,6 +199,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   setDontDestroyOnLoad: 1
+  scanForNewDevices: 1
+  scanInterval: 1
 --- !u!4 &455026616
 Transform:
   m_ObjectHideFlags: 0

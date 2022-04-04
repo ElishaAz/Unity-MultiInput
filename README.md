@@ -14,6 +14,7 @@ Note that Touchpads are currently not supported, although they *do* show up in t
 https://stackoverflow.com/questions/69414090/how-to-create-global-keyboard-hook-with-c-sharp-in-linux
 https://unix.stackexchange.com/questions/523108/getting-type-of-evdev-device
 https://www.kernel.org/doc/html/v4.14/input/event-codes.html
+https://stackoverflow.com/questions/10387603/p-invoke-ioctl-system-call
 
 ### Windows
 https://stackoverflow.com/questions/91234/multiple-keyboards-and-low-level-hooks

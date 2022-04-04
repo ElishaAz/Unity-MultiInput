@@ -116,7 +116,7 @@ namespace MultiInput.Internal.Platforms.Windows.PInvokeNet
         public static extern IntPtr DefWindowProcW(IntPtr hWnd, uint uMsg, IntPtr wParam, IntPtr lParam);
 
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        public static extern uint GetRawInputDeviceList
+        public static extern int GetRawInputDeviceList
         (
             [In, Out] RawInputDevicesListItem[] RawInputDeviceList,
             ref uint NumDevices,

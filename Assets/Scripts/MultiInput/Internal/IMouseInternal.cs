@@ -1,3 +1,5 @@
+using MultiInput.Mouse;
+
 namespace MultiInput.Internal
 {
     public interface IMouseInternal : IMouse

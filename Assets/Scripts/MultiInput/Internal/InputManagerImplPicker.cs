@@ -2,15 +2,15 @@ using System;
 
 namespace MultiInput.Internal
 {
-    internal class InputManagerImplPicker : IDisposable
+    internal class InputManagerImplPicker
     {
         internal static void CreateInstance()
         {
             Instance = new InputManagerImplPicker();
         }
 
-        public static InputManagerImplPicker Instance { get; private set; }
-        public readonly IInputManager InputManagerImpl;
+        internal static InputManagerImplPicker Instance { get; private set; }
+        internal readonly IInputManager InputManagerImpl;
 
         private InputManagerImplPicker()
         {
@@ -23,9 +23,53 @@ namespace MultiInput.Internal
 #endif
         }
 
-        public void Dispose()
+        internal void Dispose()
         {
             InputManagerImpl.Dispose();
+        }
+
+        internal void CallStartMainLoop()
+        {
+            foreach (var keyboard in InputManagerImpl.Keyboards)
+            {
+                keyboard.StartMainLoop();
+            }
+
+            foreach (var mouse in InputManagerImpl.Mice)
+            {
+                mouse.StartMainLoop();
+            }
+        }
+
+        internal void CallMainLoop()
+        {
+            foreach (var keyboard in InputManagerImpl.Keyboards)
+            {
+                keyboard.MainLoop();
+            }
+
+            foreach (var mouse in InputManagerImpl.Mice)
+            {
+                mouse.MainLoop();
+            }
+        }
+
+        internal void CallStopMainLoop()
+        {
+            foreach (var keyboard in InputManagerImpl.Keyboards)
+            {
+                keyboard.StopMainLoop();
+            }
+
+            foreach (var mouse in InputManagerImpl.Mice)
+            {
+                mouse.StopMainLoop();
+            }
+        }
+
+        public void ScanForNewDevices()
+        {
+            InputManagerImpl.ScanForNewDevices();
         }
     }
 }

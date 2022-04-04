@@ -1,49 +1,34 @@
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using UnityEngine;
+using System.Runtime.CompilerServices;
+using MultiInput.Keyboard;
 
 namespace MultiInput.Internal.Platforms.Linux
 {
-    public class KeyboardLinux : IKeyboardInternal
+    public class KeyboardLinux : KeyboardAbstract
     {
+        private readonly Action<IKeyboardInternal> invokeKeyboardRemoved;
+        private bool grab;
+
         private readonly InputReader inputReader;
-        private readonly Action<KeyCode, KeyboardLinux> invokeAnyKeyboardPress;
 
-        private readonly KeyPressProvider<KeyCode> keyPressProvider;
-
-        internal KeyboardLinux(string path, Action<KeyCode, KeyboardLinux> invokeAnyKeyboardPress)
+        internal KeyboardLinux(string path, Action<IKeyboardInternal> invokeKeyboardRemoved,
+            AnyKeyboardAction invokeAnyKeyboardPress) : base(invokeAnyKeyboardPress)
         {
-            this.invokeAnyKeyboardPress = invokeAnyKeyboardPress;
-            keyPressProvider = new KeyPressProvider<KeyCode>(
-                code => OnKeyPressed?.Invoke(code),
-                code => OnKeyReleased?.Invoke(code));
+            this.invokeKeyboardRemoved = invokeKeyboardRemoved;
+            inputReader = new InputReader(path, HandleEvent, HandleDisconnect);
+        }
 
-            inputReader = new InputReader(path,HandleEvent);
+        private void HandleDisconnect()
+        {
+            invokeKeyboardRemoved(this);
         }
 
         private void HandleEvent(EventType type, short code, int value)
         {
             if (type != EventType.EV_KEY) return;
-
-            var keyCode = ConverterLinux.EventCodeToKeyCode((EventCode) code);
+            var eventCode = (EventCode) code;
+            var keyCode = ConverterLinux.EventCodeToKeyCode(eventCode);
             keyPressProvider.HandleEvent(keyCode, ConverterLinux.KeyStateToKeyEvent((KeyState) value));
-            invokeAnyKeyboardPress?.Invoke(keyCode, this);
-        }
-
-        void IKeyboardInternal.StartMainLoop()
-        {
-            keyPressProvider.StartMainLoop();
-        }
-
-        void IKeyboardInternal.MainLoop()
-        {
-            keyPressProvider.MainLoop();
-        }
-
-        void IKeyboardInternal.StopMainLoop()
-        {
-            keyPressProvider.StopMainLoop();
         }
 
         public void Dispose()
@@ -51,25 +36,17 @@ namespace MultiInput.Internal.Platforms.Linux
             inputReader.Dispose();
         }
 
-
-        public event IKeyboard.Action OnKeyPressed;
-        public event IKeyboard.Action OnKeyReleased;
-
-        public bool GetKey(KeyCode code)
+        public override bool Grab
         {
-            return keyPressProvider.KeysHeld.Contains(code);
-        }
+            [MethodImpl(MethodImplOptions.Synchronized)]
+            get => grab;
 
-        public bool GetKeyDown(KeyCode code)
-        {
-            return keyPressProvider.KeysDown.Contains(code);
+            [MethodImpl(MethodImplOptions.Synchronized)]
+            set
+            {
+                inputReader.SetGrab(value);
+                grab = value;
+            }
         }
-
-        public bool GetKeyUp(KeyCode code)
-        {
-            return keyPressProvider.KeysUp.Contains(code);
-        }
-
-        public bool Grab { get; set; }
     }
 }

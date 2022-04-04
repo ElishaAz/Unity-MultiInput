@@ -1,8 +1,6 @@
-using UnityEngine;
-
-namespace MultiInput
+namespace MultiInput.Mouse
 {
-    public interface IMouse
+    public interface IMouse: IInput
     {
         public delegate void EventAction(MouseEvent mouseEvent);
 
@@ -20,8 +18,6 @@ namespace MultiInput
 
         public float GetWheelMovement();
         public float GetHWheelMovement();
-
-        public bool Grab { get; set; }
 
         public bool GetEvent(MouseEvent code);
         public bool GetEventDown(MouseEvent code);

@@ -1,17 +1,16 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using MultiInput.Internal.Platforms.Windows.PInvokeNet;
 
 namespace MultiInput.Internal.Platforms.Windows
 {
-    public class InputManagerWindows : IInputManager
+    public class InputManagerWindows : InputManagerAbstract
     {
         private readonly MyWMListener listener;
 
         private readonly Dictionary<IntPtr, KeyboardWindows> keyboards = new Dictionary<IntPtr, KeyboardWindows>();
-        private readonly List<KeyboardWindows> keyboardsList = new List<KeyboardWindows>();
         private readonly Dictionary<IntPtr, MouseWindows> mice = new Dictionary<IntPtr, MouseWindows>();
-        private readonly List<MouseWindows> miceList = new List<MouseWindows>();
 
 
         public InputManagerWindows()
@@ -19,19 +18,18 @@ namespace MultiInput.Internal.Platforms.Windows
             listener = new MyWMListener(OnInput, OnDeviceAdded, OnDeviceRemoved);
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         private void OnDeviceAdded(RawInputDevicesListItem device)
         {
             switch (device.Type)
             {
                 case RawInputDeviceType.MOUSE:
-                    var mouse = new MouseWindows();
+                    var mouse = new MouseWindows(InvokeAnyMouseMovement, InvokeAnyMouseEvent, InvokeAnyMouseWheel);
                     mice.Add(device.hDevice, mouse);
-                    miceList.Add(mouse);
                     break;
                 case RawInputDeviceType.KEYBOARD:
-                    var keyboard = new KeyboardWindows();
+                    var keyboard = new KeyboardWindows(InvokeAnyKeyboardPress);
                     keyboards.Add(device.hDevice, keyboard);
-                    keyboardsList.Add(keyboard);
                     break;
                 case RawInputDeviceType.HID:
                 default:
@@ -39,6 +37,7 @@ namespace MultiInput.Internal.Platforms.Windows
             }
         }
 
+        [MethodImpl(MethodImplOptions.Synchronized)]
         private void OnDeviceRemoved(RawInputDevicesListItem device)
         {
             switch (device.Type)
@@ -46,16 +45,14 @@ namespace MultiInput.Internal.Platforms.Windows
                 case RawInputDeviceType.MOUSE:
                     if (mice.Remove(device.hDevice, out var mouse))
                     {
-                        miceList.Remove(mouse);
-                        OnMouseRemoved?.Invoke(mouse);
+                        InvokeMouseRemoved(mouse);
                     }
 
                     break;
                 case RawInputDeviceType.KEYBOARD:
                     if (keyboards.Remove(device.hDevice, out var keyboard))
                     {
-                        keyboardsList.Remove(keyboard);
-                        OnKeyboardRemoved?.Invoke(keyboard);
+                        InvokeKeyboardRemoved(keyboard);
                     }
 
                     break;
@@ -87,22 +84,18 @@ namespace MultiInput.Internal.Platforms.Windows
 
         private bool HandleKeyboard(RawKeyboard keyboard, IntPtr device)
         {
-            return false;
+            return keyboards.TryGetValue(device, out var keyboardWindows) &&
+                   keyboardWindows.Process(keyboard);
         }
 
-        public void Dispose()
+
+        public override void Dispose()
         {
-            throw new System.NotImplementedException();
         }
 
-        public IReadOnlyList<IKeyboardInternal> Keyboards => keyboardsList;
-        public IReadOnlyList<IMouseInternal> Mice => miceList;
-        public event AnyKeyboardAction OnAnyKeyboardPress;
-        public event AnyMouseEvent OnAnyMouseClick;
-        public event AnyMouseMovement OnAnyMouseMovement;
-        public event KeyboardAddedAction OnKeyboardAdded;
-        public event KeyboardRemovedAction OnKeyboardRemoved;
-        public event MouseAddedAction OnMouseAdded;
-        public event MouseRemovedAction OnMouseRemoved;
+        public override void ScanForNewDevices()
+        {
+            listener.ScanForNewDevices();
+        }
     }
 }

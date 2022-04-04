@@ -1,5 +1,6 @@
 using System;
 using MultiInput;
+using MultiInput.Keyboard;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
@@ -16,6 +17,8 @@ namespace DefaultNamespace
         {
             this.keyboard = keyboard;
             GetComponent<MeshRenderer>().material.color = Random.ColorHSV();
+
+            // keyboard.Grab = true;
 
             initialized = true;
         }

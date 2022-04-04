@@ -1,4 +1,4 @@
-namespace MultiInput
+namespace MultiInput.Internal
 {
     public enum KeyEventState
     {

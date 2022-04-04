@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace MultiInput
+namespace MultiInput.Mouse
 {
     /// <summary>
     /// Represents a mouse's movement.
